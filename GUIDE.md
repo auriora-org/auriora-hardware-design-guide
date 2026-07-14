@@ -1,7 +1,7 @@
 # AURIORA Hardware Design Guide
 
 **Document ID:** AHDG
-**Version:** 0.1.0
+**Version:** 0.2.0
 **Status:** Normative
 **Complements:** AURIORA Engineering Standard (AES)
 **Language:** English
@@ -129,6 +129,19 @@ EMC is designed in, not tested in. The board that passes is the board where ever
 - **Reverse polarity.** Any user-wireable or user-pluggable power input MUST have reverse-polarity protection (P-FET preferred over series diode for efficiency; diode acceptable at low current).
 - **Overcurrent.** Every board-level power input MUST have overcurrent protection (fuse, PTC or current-limited switch) rated so that a board fault cannot ignite the board or the upstream supply. Downstream domains that can be shorted by the user (expansion connectors, unit interfaces) SHOULD have their own current limiting.
 - **Transients.** Power inputs MUST survive the transients of their environment: hot-plug inrush, inductive load dump, ESD. TVS on power entry SHOULD be default. Verify that input capacitance plus hot-plug does not violate connector or upstream limits.
+
+### 6.1 Unit Interface Power and Readiness
+
+These rules apply to any board implementing an AURIORA Unit Interface (`UIF_`), on the host side or the Unit side. The interface signal set, the discovery/activation sequence and `UIF_READY` semantics are defined by AES ([Interfaces and Versioning](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/05-interfaces-and-versioning.md), [AES-UNIT-007](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/03-architecture.md#aes-unit-007-deterministic-discovery-and-activation-sequence)); this section states what the hardware MUST do to honor them.
+
+- **Local power switching.** `UIF_PWR_EN` MUST control the Unit's functional power domain locally, through a load switch, regulator enable or equivalent on the Unit — not through a separate host-side power pin. The connector MUST NOT require separate discovery and functional power pins.
+- **Discovery while disabled.** The Unit EEPROM and the minimum circuitry required for discovery MUST remain readable from `UIF_PWR_VIN` while the functional domain is disabled (`UIF_PWR_EN` LOW).
+- **No back-powering.** Disabled Unit circuitry MUST NOT be back-powered through `UIF_I2C_*`, `UIF_SPI_*`, GPIO, interrupt, reset, synchronization or other interface signals while the functional domain is off. Check every signal that could source current into an unpowered rail.
+- **Defined `UIF_READY` state.** `UIF_READY` is active-HIGH and MUST have a defined LOW state when the Unit is absent, disabled, starting or faulty. The host MUST provide that LOW state (pull-down or equivalent) when no Unit is connected or the Unit functional domain is disabled. A Passive Unit MAY derive `UIF_READY` from its switched functional power domain (pull-up or equivalent); a Managed Unit's controller drives it.
+- **No `UIF_READY` contention.** A Managed Unit GPIO driving `UIF_READY` MUST NOT cause contention during reset, boot, unpowered or partially powered states — verify the pin is not driven high before its rail is valid.
+- **Verify power before enabling.** The host MUST verify the Unit's EEPROM power metadata (required voltage, startup/operating/discovery currents) against its own capability before asserting `UIF_PWR_EN`; if the Unit exceeds host capability, `UIF_PWR_EN` stays LOW.
+- **No presence pin.** Physical presence is determined by successful EEPROM discovery. Do not add a `UIF_PRESENT`/`UIF_PRESENT_N` or equivalent Unit-presence pin.
+- **Document the electricals per profile.** Pull-up/pull-down values, series resistance, voltage thresholds, leakage current, startup timing and power sequencing MUST be documented in the applicable Unit Interface Profile specification, together with connector keying, pin numbering, voltage and current limits, ESD protection, hot-plug behavior and mechanical constraints. Downstream Unit-interface power domains SHOULD have their own current limiting per the general power rules above.
 
 ---
 
@@ -276,4 +289,4 @@ Use additionally before a Release ([AES-REL-001](https://github.com/auriora-org/
 
 ---
 
-*AURIORA Hardware Design Guide 0.1.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
+*AURIORA Hardware Design Guide 0.2.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*

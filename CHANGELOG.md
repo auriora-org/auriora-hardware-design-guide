@@ -2,6 +2,10 @@
 
 All notable changes to the AURIORA Hardware Design Guide are documented in this file. Released versions are tagged in version control.
 
+## 0.2.0 - 2026-07-14
+
+- Unit Interface power and readiness rules (§6.1): `UIF_PWR_EN` must switch the Unit's functional power domain locally, EEPROM discovery must work while that domain is disabled, disabled circuitry must not be back-powered through interface signals, `UIF_READY` must have a defined LOW state with no contention during boot/reset, hosts must verify EEPROM power metadata before asserting `UIF_PWR_EN`, no Unit-presence pin, and per-profile documentation of electrical/mechanical limits.
+
 ## 0.1.0 - 2026-07-13
 
 First release.
