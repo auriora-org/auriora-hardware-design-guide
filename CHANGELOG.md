@@ -2,6 +2,11 @@
 
 All notable changes to the AURIORA Hardware Design Guide are documented in this file. Released versions are tagged in version control.
 
+## 0.3.0 - 2026-09-10
+
+- Unit Interface host power guidance (§6.1): port count is not additive — size the shared supply for the intended simultaneous load and document which port combinations are supported; the discovery-state current of every connected Unit is a real base load even with all functional domains disabled; Unit start-up peaks stack when several Units are enabled together, and staggering enables helps a transient limit only; shared versus per-port protection is a deliberate choice, and the physical protection — not the Unit's self-declared EEPROM metadata — is what contains a Unit drawing more than it declared.
+- Component selection (§3): pointer to the AES default controller platform requirement (`AES-ARCH-001`), keeping this guide part-number-neutral rather than repeating the families.
+
 ## 0.2.0 - 2026-07-14
 
 - Unit Interface power and readiness rules (§6.1): `UIF_PWR_EN` must switch the Unit's functional power domain locally, EEPROM discovery must work while that domain is disabled, disabled circuitry must not be back-powered through interface signals, `UIF_READY` must have a defined LOW state with no contention during boot/reset, hosts must verify EEPROM power metadata before asserting `UIF_PWR_EN`, no Unit-presence pin, and per-profile documentation of electrical/mechanical limits.

@@ -1,7 +1,7 @@
 # AURIORA Hardware Design Guide
 
 **Document ID:** AHDG
-**Version:** 0.2.0
+**Version:** 0.3.0
 **Status:** Normative
 **Complements:** AURIORA Engineering Standard (AES)
 **Language:** English
@@ -64,6 +64,7 @@ The schematic is read far more often than it is drawn — by reviewers, layout, 
 
 Components are selected for a product lifetime of decades: availability and margin outweigh unit cost.
 
+- **Controller platform.** AES names the Platform's default controller families per workload profile ([AES-ARCH-001](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/03-architecture.md#aes-arch-001-default-controller-platform)); this guide stays part-number-neutral and does not repeat them. Another platform is allowed where the requirements warrant it, with the reasons in the design notes.
 - **Packages.** Default passives to 0402, 0603 or 0805. Where board space permits, 0805 is a perfectly acceptable choice and SHOULD be preferred for serviceability — it is the easiest size to inspect and hand-rework. Smaller than 0402 MUST be justified by density. Prefer packages with inspectable, reworkable joints; BGA/QFN are acceptable but MUST be paired with the inspection and test measures of Sections 12–13. Minimize the number of distinct values and packages.
 - **Availability.** For Released hardware, every BOM line SHOULD have at least two independent sources, and single-source parts MUST be flagged in the BOM with a substitution plan. During prototyping, alternate sourcing plans are not required — but avoid designing critical circuits around parts you already know are hard to buy. Generic parts (passives, standard logic) SHOULD be specified by parameters, not locked to one manufacturer.
 - **Lifecycle.** Check lifecycle status at design time. Prefer industrial/automotive series with long production commitments over consumer series. For risky parts, choose footprints that accept known alternates so substitution does not force a respin.
@@ -140,6 +141,10 @@ These rules apply to any board implementing an AURIORA Unit Interface (`UIF_`), 
 - **Defined `UIF_READY` state.** `UIF_READY` is active-HIGH and MUST have a defined LOW state when the Unit is absent, disabled, starting or faulty. The host MUST provide that LOW state (pull-down or equivalent) when no Unit is connected or the Unit functional domain is disabled. A Passive Unit MAY derive `UIF_READY` from its switched functional power domain (pull-up or equivalent); a Managed Unit's controller drives it.
 - **No `UIF_READY` contention.** A Managed Unit GPIO driving `UIF_READY` MUST NOT cause contention during reset, boot, unpowered or partially powered states — verify the pin is not driven high before its rail is valid.
 - **Verify power before enabling.** The host MUST verify the Unit's EEPROM power metadata (required voltage, startup/operating/discovery currents) against its own capability before asserting `UIF_PWR_EN`; if the Unit exceeds host capability, `UIF_PWR_EN` stays LOW.
+- **Ports are not additive.** The number of Unit ports a host provides is not a promise that all of them can draw their per-port maximum at once. Size the shared supply for the intended simultaneous load rather than for port count × per-port rating, and document which combinations the design supports ([AES-MOD-003](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/03-architecture.md#aes-mod-003-unit-compatibility-matrix)). A Module that exposes more ports than it can drive together is a legitimate design; an undocumented one is not.
+- **Discovery load is always present.** Every connected Unit draws its discovery-state current from `UIF_PWR_VIN` even while every functional domain is disabled. On a high-port-count host that sum is a real base load and belongs in the power tree — small is not zero.
+- **Startup peaks overlap.** Unit start-up current can exceed operating current, and enabling several Units together stacks those peaks onto one supply. Either size for the overlap or stagger the enables; staggering helps a transient limit only, never a sustained shortfall.
+- **Shared or per-port protection.** Choose deliberately. Shared upstream protection is often sufficient where a Unit fault only has to be contained; per-port current limiting earns its cost where one faulty Unit or damaged cable must not disturb the others, or where port faults must be individually diagnosable. Either way the physical protection is what contains a Unit that draws more than it declared — EEPROM power metadata is unauthenticated input, never a safety barrier ([AES-EEPROM-007](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/06-eeprom-metadata.md#aes-eeprom-007-metadata-trust-model)).
 - **No presence pin.** Physical presence is determined by successful EEPROM discovery. Do not add a `UIF_PRESENT`/`UIF_PRESENT_N` or equivalent Unit-presence pin.
 - **Document the electricals per profile.** Pull-up/pull-down values, series resistance, voltage thresholds, leakage current, startup timing and power sequencing MUST be documented in the applicable Unit Interface Profile specification, together with connector keying, pin numbering, voltage and current limits, ESD protection, hot-plug behavior and mechanical constraints. Downstream Unit-interface power domains SHOULD have their own current limiting per the general power rules above.
 
@@ -289,4 +294,4 @@ Use additionally before a Release ([AES-REL-001](https://github.com/auriora-org/
 
 ---
 
-*AURIORA Hardware Design Guide 0.2.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
+*AURIORA Hardware Design Guide 0.3.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
