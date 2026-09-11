@@ -1,7 +1,7 @@
 # AURIORA Hardware Design Guide
 
 **Document ID:** AHDG
-**Version:** 0.3.0
+**Version:** 0.4.0
 **Status:** Normative
 **Complements:** AURIORA Engineering Standard (AES)
 **Language:** English
@@ -117,6 +117,20 @@ EMC is designed in, not tested in. The board that passes is the board where ever
 - **Ferrite beads.** Use ferrites deliberately: to isolate a noisy domain from a quiet rail, chosen by impedance at the offending frequency and rated for the DC current. Do not scatter ferrites as a reflex — a ferrite plus decoupling forms a resonant circuit; damp it or verify it.
 - **Shields and chassis.** Connector shells and cable shields SHOULD bond to chassis/shield ground at the point of entry, 360° where possible, not through a long pigtail to signal ground. The chassis-to-GND connection is a deliberate design decision (direct, capacitive, or single-point) and MUST be documented.
 - **Cable routing and isolation.** Keep noisy cables (motor, switching power) and sensitive cables (analog sensors) physically separated and on separate connectors. On-board, keep noisy circuit regions away from I/O areas; if a noisy signal must cross the board, route it on inner layers between grounds.
+
+### 5.1 Module Synchronization Interface (SYNC) Ports
+
+These rules apply to any board that provides a SYNC IN or SYNC OUT port, and to a SYNC Hub. What SYNC is — a Module-level, point-to-point differential event interface that carries no data — its topology and its behavioral rules are defined by AES ([Interfaces and Versioning §4](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/05-interfaces-and-versioning.md#4-module-synchronization-interface), [SYNC specification](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/interfaces/sync.md)); this section states what the hardware MUST do to honor them. Connector, pinout and the open electrical items live in the specification and are not repeated here.
+
+- **One transceiver class, two independent links.** Implement SYNC OUT with the differential transmitter and SYNC IN with the differential receiver of a 3.3 V-compatible, full-duplex RS-422/RS-485-compatible transceiver class with separate transmitter and receiver pairs and a fail-safe receiver. A half-duplex transceiver MUST NOT serve both ports through one device: the two ports are independent links, never a shared bus, and there is no direction control to drive. Specify the part by parameters (Section 3), not by one manufacturer.
+- **Termination at the receiver only.** Each SYNC IN carries its own differential termination (nominally 120 Ω, to be validated against the transceiver class and the cable). SYNC OUT and Hub outputs MUST NOT be terminated as receivers. Place the termination at the receiver input, after the protection.
+- **Fail-safe idle.** A SYNC IN MUST resolve to the inactive state with the cable unplugged, with the far end unpowered and with the pair shorted, and MUST NOT generate an event on cable insertion or removal. Use a transceiver with true fail-safe receiver behavior or add biasing that guarantees it, and verify all three cases on the bench. An unplugged SYNC IN that fires is a Module that starts experiments by itself.
+- **Protection first.** A SYNC port is an external, user-wired connector: TVS/clamp protection sits directly at the connector, before the termination and the transceiver, with a short low-inductance ground path (the ESD rules above). The transceiver's internal ESD rating is not the protection strategy. Where cables leave the enclosure for long runs, stage surge-rated protection ahead of it.
+- **No back-drive.** An unpowered board MUST NOT be driven through, and MUST NOT source current into, its SYNC pins; check the transceiver's unpowered bus-pin behavior and the protection network's leakage paths.
+- **Layout and naming.** Route `SYNC_P`/`SYNC_N` as a coupled, symmetric pair from connector to transceiver (Section 7 differential-pair rules — the edge rates are modest, the noise environment is not). Keep the protection → termination → transceiver chain short and in that order. Name the nets `SYNC_IN_P`/`SYNC_IN_N` and `SYNC_OUT_P`/`SYNC_OUT_N`.
+- **Event capture path.** Connect the SYNC IN receiver output to a controller input that can timestamp the edge in hardware — a timer input-capture pin, an edge-triggered interrupt alongside a free-running counter, or a programmable-I/O peripheral — and the SYNC OUT transmitter input to a hardware-timed output, not a general-purpose pin toggled from a task. The firmware side is in the [Firmware Style Guide](https://github.com/auriora-org/auriora-firmware-style-guide) §14.2.
+- **Connector safety.** The M8 3-position A-coded form may also appear on other ports of the same product family, such as sensor or electrode inputs. Until the specification fixes gender and keying, choose the SYNC connectors so that mis-mating with every other M8 port on the product family is either mechanically impossible or electrically harmless in both directions, label the ports `SYNC IN` and `SYNC OUT`, and record the analysis in the design notes (Section 11: anything that can be plugged in wrong eventually will be).
+- **SYNC Hub.** A Hub is a purely electrical receive → regenerate → distribute device: one SYNC IN receiver (terminated), its output fanned to *N* SYNC OUT transmitter inputs, no controller, no firmware. Use the same transceiver class as the Modules and add a logic buffer only where fan-out loading or edge-timing analysis requires it. Power the Hub independently and make every output idle — not toggling — when Hub power is lost or the input is unplugged. Measure and document input-to-output propagation delay, channel-to-channel skew and jitter for a Released Hub; a Hub is never described as zero-delay.
 
 ---
 
@@ -294,4 +308,4 @@ Use additionally before a Release ([AES-REL-001](https://github.com/auriora-org/
 
 ---
 
-*AURIORA Hardware Design Guide 0.3.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
+*AURIORA Hardware Design Guide 0.4.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
