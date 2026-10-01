@@ -2,6 +2,10 @@
 
 All notable changes to the AURIORA Hardware Design Guide are documented in this file. Released versions are tagged in version control.
 
+## 0.8.0 - 2026-10-01
+
+- Module Power Interface figures and connector reservation (§6.2 revised, §5.2 Hub-power bullet revised, §16 checklists), following AES 0.11.0 `AES-MOD-006`, the tightened `AES-HUB-001` and Module Power Interface `0.2` ([EDR-015](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/edr/EDR-015-module-power-interface-limits-and-connector-reservation.md)): 10.0–15.0 V operating and 0–18 V / −18 V no-damage design targets; 2 A continuous and 3 A start-up budgeted at 10.0 V, so about 20 W for a constant-power design; defined brownout; declared input capacitance; *pin-contact* / *socket-contact* named beside the gender; the male M8 3-position form reserved for the power input on every Platform device and the female form permitted on measurement ports with the mis-mating table recorded; source output band 11.4–15.0 V with a re-terminated commercial adapter as a conformant prototype source; cable loop-resistance and length figures per conductor size; a Hub's own Module Power Interface input required rather than preferred; bench verification at the range and current limits.
+
 ## 0.7.0 - 2026-09-23
 
 - Hub port hardware for cascading (§5.3, extended; §5.1 Hub-to-Hub bullet extended), following AES 0.10.0 `AES-HUB-004` and `AES-HUB-005` ([EDR-013](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/edr/EDR-013-mcl-cascading-and-path-addressing.md)): identical `MCL` transceivers on every Hub port with the master or responder role as a firmware property of the port index, one layout block for all ports, enclosure labels carrying the declared index and role, and driver contention between two masters survived indefinitely so that a reported fault is the only consequence. The Link Cable between a link port and a Module Port carries cascaded `MCL` on its third pair with no change to the AEL hardware.
