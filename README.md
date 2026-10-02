@@ -13,6 +13,7 @@ Read the guide: [GUIDE.md](./GUIDE.md)
 - Mechanical integration, manufacturability, design for test, reliability
 - Documentation requirements for Released hardware
 - A one-screen prototype review checklist plus release additions
+- Hardware repository and KiCad project structure: layout, board projects, project-local libraries, naming, title block, generated outputs, documentation and mechanical ownership, licensing
 
 The guide is technology-independent and contains no specific part numbers or vendor recommendations.
 

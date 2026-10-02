@@ -1,7 +1,7 @@
 # AURIORA Hardware Design Guide
 
 **Document ID:** AHDG
-**Version:** 0.8.0
+**Version:** 0.9.0
 **Status:** Normative
 **Complements:** AURIORA Engineering Standard (AES)
 **Language:** English
@@ -49,14 +49,14 @@ AURIORA hardware is designed to be manufactured, repaired and extended for decad
 The schematic is read far more often than it is drawn — by reviewers, layout, test, firmware and future maintainers. Draw it for them.
 
 - **Hierarchy.** Complex boards SHOULD use hierarchical sheets, one functional block per sheet, with a top sheet showing the board architecture: blocks, major buses, power rails, external connectors. A genuinely simple board is fine on one or two flat sheets — hierarchy is for readability, not ceremony.
-- **Sheet organization.** Order sheets by signal flow (input/protection → processing → output; power sheets grouped). Give every sheet a descriptive title, project name, revision and sheet number. Split overcrowded sheets instead of shrinking them.
+- **Sheet organization.** Order sheets by signal flow (input/protection → processing → output; power sheets grouped). Every sheet carries the title block of Section 17.5 — a human-readable title, the board identity and revision — and its sheet number. Split overcrowded sheets instead of shrinking them.
 - **Naming.** All visible names MUST be English and follow the AES Naming Standard. Name by function, not implementation: `SENS_PWR_EN`, not `GPIO7`.
 - **Reference designators.** Use conventional class letters (R, C, L, D, Q, U, J, TP, MH…), unique across the whole design. Once a revision is released, designators are frozen — never reuse a released designator for a different function.
 - **Net naming.** Every power rail, bus, clock, reset and sheet-crossing net MUST have an explicit name. Power nets encode voltage and domain (`+3V3`, `+3V3_ANA`, `VBAT`); grounds are named per domain (`GND`, `AGND`, `PGND`) and joined at explicit net-tie points only. Active-low marking MUST use one project-wide convention (`_N`). Interface nets SHOULD carry their AES interface prefix (`UIF_`, `HIF_`).
 - **Signal grouping.** Draw buses as buses, differential pairs adjacent and named `_P`/`_N`. Split large IC symbols by function, not physical pin order.
 - **Power domains.** Every domain's source, voltage, consumers and enable control MUST be traceable in the schematic. Released designs with multiple power domains SHOULD additionally document a power tree or power-domain table (voltage, source, budget, protection, enable, sequencing) — for a single-rail prototype, clear schematic net names and a design-notes line are enough. Power sheets SHOULD state the budget: expected load, regulator limit, protection threshold.
 - **Documentation in the schematic.** Annotate intent where it applies: value choices, DNP parts (marked in schematic, BOM and assembly outputs), current budgets, expected voltages at key nodes for bring-up, and all layout constraints (impedance, matching, keep-outs, kelvin connections). Layout requirements MUST be written down, never verbal.
-- **Reusable blocks.** Proven circuits (protection front-ends, regulator stages, identity EEPROM) SHOULD live in a shared, versioned library and be reused, not redrawn. A reused block MUST still be re-verified in its new context, and fixes SHOULD flow back to the shared library.
+- **Reusable blocks.** Proven circuits (protection front-ends, regulator stages, identity EEPROM) SHOULD live in a shared, versioned library and be reused, not redrawn. A reused block MUST still be re-verified in its new context, and fixes SHOULD flow back to the shared library. A board carries its own copy of the assets it uses (Section 17.3).
 
 ---
 
@@ -331,18 +331,32 @@ These rules apply to a Module that advertises unattended autonomous operation �
 
 Documentation obligations are defined by AES ([AES-REL-001](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/07-maturity-and-release.md#aes-rel-001-release-completeness)); this section states what good hardware documentation contains. It binds **Released** hardware — a prototype needs only its sources, a README and honest design notes.
 
-- **Released package.** A released hardware design MUST include: editable schematic and PCB sources, schematic PDF, manufacturing outputs (Gerbers, drill, pick-and-place), BOM, assembly drawing, stackup and impedance requirements where controlled, and a DRC report. Multi-domain designs include the power tree or power-domain table.
+- **Released package.** A released hardware design MUST include: editable schematic and PCB sources, schematic PDF, manufacturing outputs (Gerbers, drill, pick-and-place), BOM, assembly drawing, stackup and impedance requirements where controlled, and a DRC report. Multi-domain designs include the power tree or power-domain table. Generated outputs are attached to the tagged release, not committed to the source tree (Section 17.6).
 - **Schematic quality.** The schematic PDF is the primary review artifact: it MUST be complete, legible, and identical in content to the source at the released revision.
 - **Assembly drawings.** Assembly drawings MUST show designators, polarity/orientation marks, DNP parts, variant differences, and any manual assembly or masking instructions.
 - **BOM quality.** The BOM MUST identify every line by value/parameters, package, designators and quantity, mark single-source and DNP lines, and reflect variants explicitly. Parameter-specified generic lines (per Section 3) state acceptance criteria, not just one part.
 - **Manufacturing outputs.** Generated outputs MUST match the released source revision exactly and be regenerated (never hand-edited) after any change. Fab notes state stackup, finish, impedance control, and acceptance class.
-- **Revision management.** Board revisions follow the AES versioning rules; the physical board MUST carry its identity and revision (per AES identifier and marking rules), and the documentation package MUST make revision differences discoverable (changelog per revision).
+- **Revision management.** Board revisions follow the AES versioning rules; the physical board MUST carry its identity and revision (per AES identifier and marking rules), and the documentation package MUST make revision differences discoverable (changelog per revision). A revision is never a directory: one board project, the revision in the title block, Git history and tags (Section 17.2).
 
 ---
 
 ## 16. Review Checklists
 
 Self-review is valid ([AES-QA-001](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/07-maturity-and-release.md#aes-qa-001-proportionate-review)) — ideally after a day away from the design. Skip items that plainly don't apply; no N/A bookkeeping. Every real "no" is fixed or consciously accepted with a one-line design-notes entry. Independent review is strongly recommended for mains/hazardous voltage, high-energy batteries, RF compliance and production manufacturing.
+
+### Project setup checklist
+
+Use when a hardware repository or a board project is created, before schematic work starts (Section 17). Restructuring later costs more than every item here together.
+
+- [ ] Repository has `README.md` with the board map and `LICENSE` with the full license text; `boards/` exists even for one PCB; no empty directories
+- [ ] Every independently manufactured PCB is its own board project named `<family-id>-<nn>-<role>`; the KiCad root files carry the same name
+- [ ] Project-local libraries under `symbols/`, `footprints/<board>.pretty/` and `3dmodels/` only where custom assets exist, registered with `${KIPRJMOD}` paths and `<FAMILY-ID>_<ROLE>` nicknames; no absolute path, no reference into another board's library
+- [ ] Sheet names UPPER_SNAKE_CASE, sheet files kebab-case, titles human-readable; hierarchy by function
+- [ ] Title block complete on every sheet: ISO date, `DRAFT` or `Rev <LETTER>`, company, project, product or parent, board, license, source location
+- [ ] `.gitignore` covers KiCad local history, backups, autosaves, lock and per-user settings files and the local build directory
+- [ ] Third-party symbols, footprints and models checked for redistribution; origin and license recorded where their license requires it
+- [ ] Board-to-product relationships and shared boards recorded in the README; documentation and mechanical sources placed by ownership
+- [ ] Supported KiCad version stated in the README
 
 ### Prototype checklist
 
@@ -377,7 +391,135 @@ Use additionally before a Release ([AES-REL-001](https://github.com/auriora-org/
 - [ ] DFM/DFT complete: standard assembly sufficient, fiducials, inspectability, production programming access, labeled test points, per-state current limits for test criteria
 - [ ] Release package complete (Section 15) and regenerated from the tagged source revision
 - [ ] Board carries identity and revision marking per AES; revision changelog present
+- [ ] Release package carries the license text and the Source Location (Section 17.8)
 
 ---
 
-*AURIORA Hardware Design Guide 0.6.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
+## 17. Hardware Repository and KiCad Project Structure
+
+Structure is cheap at project creation and expensive once schematic and layout work has started, so this section applies from the first commit at every maturity level. KiCad is the Platform's default EDA tool and the one tool this guide names, in the way [AES Architecture §6](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/03-architecture.md#6-default-controller-platform-strategy) names default Controller platforms; the structural rules themselves are tool-neutral, and Sections 17.3 and 17.6 give the KiCad mapping. Repository names, product numbers, hardware revisions and board identity follow [AES Naming and Identity](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/04-naming-and-identity.md); documentation files follow the [AURIORA Documentation Standard](https://github.com/auriora-org/auriora-documentation-standard/blob/main/STANDARD.md).
+
+### 17.1 Repository layout
+
+A hardware repository holds the PCBs that together form one product or Product Family. Its layout is:
+
+```text
+<repository>/
+├── README.md
+├── LICENSE
+├── .gitignore
+├── boards/
+│   └── <family-id>-<nn>-<role>/      one KiCad project per PCB (Section 17.2)
+├── docs/                             product-level documentation, when it exists
+├── mechanical/                       product mechanical sources, when they exist
+└── tools/                            scripts and configuration that generate or validate outputs
+```
+
+- **`boards/` always.** The repository MUST keep every PCB under `boards/`, even while the product has one PCB. A status board, front panel, adapter or power board added later then needs no reorganization.
+- **Place by ownership, not by file extension.** `boards/` holds independently manufactured PCB design sources; `mechanical/` holds product mechanical sources; `docs/` holds documentation that spans the product or several PCBs; `tools/` holds what reproduces or checks outputs. A STEP model a footprint uses is a board asset (Section 17.3); an enclosure STEP is mechanical.
+- **No empty directories, no speculative hierarchy.** Create `docs/`, `mechanical/`, `tools/` and every subdirectory when content exists, never as a placeholder. Prefer shallow and predictable; add a level only when it solves a real organization or ownership problem.
+- **README.** The repository README follows [ADS §3](https://github.com/auriora-org/auriora-documentation-standard/blob/main/STANDARD.md#3-readme) and additionally MUST state: the board projects under `boards/` with their roles, which product or variant each board belongs to, which boards are shared by several products, the supported KiCad version, where mechanical and product documentation live, and the license of each artifact type. For a Released Product Family the [AES name-mapping table](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/04-naming-and-identity.md#8-name-mapping) lives here. The README is the hardware map; it does not repeat this guide.
+- **Generated outputs** stay out of the source tree (Section 17.6).
+
+### 17.2 Board projects
+
+- **One PCB, one project.** Every independently manufactured and independently revisable PCB MUST be its own KiCad project under `boards/`: its own `.kicad_pro`, root schematic, PCB file, hardware revision, BOM and manufacturing outputs. Boards that share an enclosure are not one project. Panelization or a design that manufacturing tooling genuinely requires to be handled together is the justified exception, noted in the design notes.
+- **Name.** The board project directory is `<family-id>-<nn>-<role>`: the family identifier, the AES product number and the board's role (`main`, `status`, `front-panel`, `power`, …), lowercase kebab-case. The role is present even when the product has one board, so the name stays unambiguous in tooling, release packages and CI output. The KiCad root files carry the same name. The uppercase form `<FAMILY-ID>-<NN>-<ROLE>` is the board identity in the title block and on the board.
+- **Product, revision, assembly variant.** A board whose host-visible contract differs is a new product under AES and gets its own board project. A compatible redesign of the same board is a new hardware revision, `Rev <LETTER>`, inside the same project: revisions live in Git history, tags, the title block and the release packages, never in `<board>-rev-b/` directories. A population difference (DNP parts, an assembly option) on the same fabricated PCB is an assembly variant, expressed in the BOM and assembly outputs, not a new project. Different copper, outline, stackup or connector placement is a new revision or a new board, never a variant.
+- **Shared boards.** When several products use the same fabricated PCB at the same revision, there is one authoritative board project and the README records which products consume it. The project is not copied into variant directories. Once the board diverges electrically, mechanically or in manufacturing, it becomes a distinct board project.
+- **Relationships.** The README records which board is the product's primary board, which are subordinate or optional, and which parent product a board belongs to. Where tooling consumes it, the optional AES object manifest MAY carry the same facts. Subordinate boards get no AOID or public identifier of their own; the board identity above is enough ([AES-ID-006](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/04-naming-and-identity.md#aes-id-006-aoid-assignment)).
+
+### 17.3 Libraries and assets
+
+```text
+<board>/
+├── <board>.kicad_pro
+├── <board>.kicad_sch                 root schematic
+├── <board>.kicad_pcb
+├── sym-lib-table
+├── fp-lib-table
+├── symbols/                          one project-local symbol library
+├── footprints/
+│   └── <board>.pretty/               one project-local footprint library
+├── 3dmodels/                         component models, flat
+└── docs/                             board-local documentation, when it exists
+```
+
+- **Project-local libraries.** Every symbol, footprint and 3D model the board needs that the standard KiCad libraries do not safely provide — custom, imported or locally modified — lives in the board project. Standard KiCad libraries are not copied in. A clean clone MUST open with every symbol, footprint and model resolved.
+- **One library each.** One project-local symbol library (a single `.kicad_sym` file or a KiCad library directory under `symbols/`) and one `.pretty` footprint library per board. No category libraries or subdirectories (`symbols/mcu/`, `footprints/connectors.pretty`) until the board is large enough that the split has a maintenance benefit. `3dmodels/` stays flat.
+- **Relative paths.** Library and model paths MUST be project-relative, `${KIPRJMOD}/symbols/…`, `${KIPRJMOD}/footprints/<board>.pretty`, `${KIPRJMOD}/3dmodels/<model>.step`. No developer path ever enters the repository.
+- **Nicknames.** The project-local library nickname is `<FAMILY-ID>_<ROLE>`, UPPER_SNAKE_CASE, the same for the symbol and the footprint table, without revision number or path. It stays stable across hardware revisions; KiCad only needs it unique within the project.
+- **Shared library versus board copy.** The shared AURIORA library of proven blocks (Section 2) is the canonical source of reusable assets; a board project carries copies of the assets it uses, so that a change in the shared library never alters an existing design, and fixes flow back from the board to the shared source. One board MUST NOT reference another board project's library (`../<other-board>/footprints/…`); editing one PCB must not silently change another.
+- **Component models only.** `3dmodels/` holds the models footprints reference. Enclosure, panel and bracket CAD belongs in repository-level `mechanical/` (Section 17.7).
+
+### 17.4 Naming inside the project
+
+```text
+board directory and root files   lowercase kebab-case      <family-id>-<nn>-<role>.kicad_sch
+hierarchical sheet name          UPPER_SNAKE_CASE          POWER, CONNECTORS, ANALOG_FRONTEND
+hierarchical sheet file          lowercase kebab-case      power.kicad_sch, analog-frontend.kicad_sch
+title-block Title                human-readable text       Power, Analog Frontend
+```
+
+Sheet names and files describe the function of the sheet and do not repeat the board or product name; the project directory already provides that namespace. Hierarchy follows function, as Section 2 requires: one `POWER` sheet holds the whole power subsystem until its complexity justifies `POWER_INPUT` and `POWER_REGULATION`.
+
+### 17.5 Title block
+
+Every schematic page must be understandable when printed or exported alone, so every sheet of a board carries the same metadata and differs only in `Title`:
+
+| Field | Content |
+|---|---|
+| Issue Date | `YYYY-MM-DD` (ISO 8601), never a locale-dependent form |
+| Revision | `DRAFT` until the first manufactured revision is released, then `Rev <LETTER>` per AES |
+| Title | root sheet: the human-readable board name; hierarchical sheet: the function of that page (`Power`) |
+| Company | `AURIORA` |
+| Comment 1 | `Project: <family-id>-<nn>-<role>` |
+| Comment 2 | `Product: <FAMILY-ID>-<NN>` on the board that is the product; `Parent: <FAMILY-ID>-<NN>` on a subordinate board |
+| Comment 3 | `Board: <FAMILY-ID>-<NN>-<ROLE>` |
+| Comment 4 | the hardware license statement of Section 17.8 |
+| Comment 5 | `Source: <repository URL>` — the Source Location the license requires |
+
+The remaining comment fields stay empty. The hardware revision is independent of Git tags, repository versions and manufacturing-package versions ([AES version axes](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/05-interfaces-and-versioning.md#2-version-axes)): a documentation-only, BOM-only or manufacturing-file-only release does not change it.
+
+### 17.6 Sources, generated outputs and ignore policy
+
+- **Committed:** `*.kicad_pro`, `*.kicad_sch`, `*.kicad_pcb`, `sym-lib-table`, `fp-lib-table`, `symbols/`, `footprints/`, `3dmodels/`, and the scripts, templates, DRC/ERC rule files, stackup definitions and BOM configuration that reproduce outputs, in `tools/` or beside the board.
+- **Not committed:** Gerbers, drill files, BOM, pick-and-place, schematic and assembly PDFs, STEP exports, release notes. They are regenerated from the tagged source revision (Section 15) and attached to that tag's release, which is the immutable manufacturing package of [AES-MFG-001](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/07-maturity-and-release.md#aes-mfg-001-manufacturing-package). No `releases/` directory in the source tree; a local `build/` for generation during development is ignored.
+- **Ignore policy.** The repository `.gitignore` MUST cover KiCad's per-user and temporary files. For KiCad 10:
+
+```gitignore
+# KiCad local history (contains a nested Git repository), backups, autosaves, locks
+.history/
+*-backups/
+*.kicad_sch-bak
+*.kicad_pcb-bak
+_autosave-*
+~*.lck
+fp-info-cache
+# per-user project settings
+*.kicad_prl
+# local output
+build/
+```
+
+### 17.7 Documentation and mechanical ownership
+
+- **Documentation.** If a document describes one PCB only — bring-up, test-point map, programming and debug, calibration, errata, board-specific assembly notes — it lives in that board's `docs/`. If it describes the whole product or several PCBs — architecture, board-to-board relationships, cabling, product assembly and bring-up, variant comparison, system block diagrams — it lives in repository-level `docs/`. Reusable engineering rules live in this guide. No document exists at both levels.
+- **Mechanical sources.** Repository-level `mechanical/` holds product mechanical design sources: enclosure, panels, brackets, mounting structures, light guides, gaskets, harness geometry, drawings and printable parts. Products with mechanical variants use `mechanical/<variant>/`, flat until content justifies `enclosure/`, `mounting/` and the like; `mechanical/shared/` exists only for parts genuinely used by more than one variant, as one authoritative source, never as a copy per variant. Mechanical files that support one PCB only — outline reference, keep-out geometry, a fixture model — live with that board project. Integration rules are in Section 11.
+- **Mechanical source versus export.** Editable CAD sources are committed; STEP, STL, 3MF, DXF and PDF exports are not, unless an export is the irreproducible input of another tool or process, and then the design notes say so. Manufacturing exports follow Section 17.6.
+
+### 17.8 Licensing in a hardware repository
+
+- **Default license.** Hardware design sources are licensed under **CERN-OHL-W-2.0** ([AES-OH-004](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/07-maturity-and-release.md#aes-oh-004-default-licenses)). The root `LICENSE` file carries the complete license text; the README states the license of each artifact type — hardware, tools, documentation — with a link ([AES-OH-002](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/07-maturity-and-release.md#aes-oh-002-license-declaration)).
+- **One canonical wording.** The title block carries `Licensed under CERN-OHL-W-2.0` (Comment 4) and `Source: <repository URL>` (Comment 5). The README carries the copyright line and the license notice in the form the CERN-OHL user guide gives, with the same Source Location. The wording is not redefined elsewhere.
+- **Notices.** CERN-OHL-W §3 and §4 bind the project: notices in covered sources are retained, a modification notice is added when covered source from elsewhere is modified, and whoever conveys a product must give the recipient the complete source or its Source Location. Every release package (Section 17.6) therefore MUST include the license text and the Source Location.
+- **PCB marking.** A board SHOULD carry `CERN-OHL-W-2.0` and its Source Location on the silkscreen or another documentation layer where area allows; on a board too small for it, the Source Location in the documentation and packaging satisfies the license. Identity and revision marking remains a MUST (Section 15).
+- **Third-party assets.** Copying a symbol, footprint, 3D model, CAD file, font or reference design into the repository does not relicense it. Before vendoring, check that redistribution is permitted; record origin, license and attribution in `THIRD_PARTY_NOTICES.md`, with full texts in `LICENSES/` where a license requires its text — both created only when such assets exist. An asset that may not be redistributed is not committed to a public repository: document its source and retrieval, generate it locally, link upstream where allowed, or draw a clean-room project-local replacement.
+
+### 17.9 Existing repositories
+
+New projects use this structure from creation. An existing repository migrates when substantial hardware work begins or when the migration has a practical benefit; historical files are not moved or renamed for cosmetic consistency if that breaks traceability, release links or manufacturing history. A structure deliberately left as it is gets one line in the README or design notes saying so.
+
+---
+
+*AURIORA Hardware Design Guide 0.9.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
