@@ -2,6 +2,11 @@
 
 All notable changes to the AURIORA Hardware Design Guide are documented in this file. Released versions are tagged in version control.
 
+## 0.11.1 - 2026-10-20
+
+- §2 reusable-block list names Unit Port and Unit Link blocks instead of an identity EEPROM, following the AES chapter 06 retitle to *Unit Identity Record*.
+- §6 overcurrent bullet aligned with §6.1: a Unit Port's own current limit is a MUST, not a SHOULD; the SHOULD stays for expansion connectors and measurement ports. Found while re-deriving the AI Engineering Knowledge Base.
+
 ## 0.11.0 - 2026-10-20
 
 - Unit Port and Unit Link hardware (new §5.4; §6.1 rewritten; §5.3 cross-mating, §6.2 Unit-power and connector-register bullets; §16 prototype checklist), following AES 0.14.0 `AES-UNIT-007`, `AES-IF-009`, `AES-IF-010` and the `UIF-RS485-4` profile ([EDR-017](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/edr/EDR-017-unit-link-profile-and-family-consolidation.md)): the M8 4-position A-coded female / socket-contact Unit Port on the host with positions 1 `UIF_PWR_VIN`, 2 `UIF_LINK_P`, 3 `GND`, 4 `UIF_LINK_N`, male / pin-contact input or captive cable on the Unit; one RS-485-class transceiver per port of the `MCL` class with fail-safe idle, termination at both ends and contention survival; a **mandatory per-port power switch and current limit** defaulting off, `UIF_PWR_VIN` in the 10.0–15.0 V band from the protected input and never `MPI_VIN` straight through; the mis-mating with the 3-position power plug made harmless by sharing positions 1 and 3; isolation as a documented product decision with the ground-loop analysis; the Unit's discovery and functional domains, local switching on *enable*, silence as *not ready*, recovery by port power cycle with a discharging input; internal Units on the same link with the JST SH 1.00 mm 4-position connector recommended on the same position assignment; the generic M8 4-position cordset as the Unit cable with a recorded validated length; panel length planned with the port count; and the bench verification list. The former §6.1 rules for `UIF_PWR_EN`, `UIF_READY` and the I²C/SPI buses are withdrawn with those signals.

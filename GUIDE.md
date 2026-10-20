@@ -1,7 +1,7 @@
 # AURIORA Hardware Design Guide
 
 **Document ID:** AHDG
-**Version:** 0.11.0
+**Version:** 0.11.1
 **Status:** Normative
 **Complements:** AURIORA Engineering Standard (AES)
 **Language:** English
@@ -56,7 +56,7 @@ The schematic is read far more often than it is drawn — by reviewers, layout, 
 - **Signal grouping.** Draw buses as buses, differential pairs adjacent and named `_P`/`_N`. Split large IC symbols by function, not physical pin order.
 - **Power domains.** Every domain's source, voltage, consumers and enable control MUST be traceable in the schematic. Released designs with multiple power domains SHOULD additionally document a power tree or power-domain table (voltage, source, budget, protection, enable, sequencing) — for a single-rail prototype, clear schematic net names and a design-notes line are enough. Power sheets SHOULD state the budget: expected load, regulator limit, protection threshold.
 - **Documentation in the schematic.** Annotate intent where it applies: value choices, DNP parts (marked in schematic, BOM and assembly outputs), current budgets, expected voltages at key nodes for bring-up, and all layout constraints (impedance, matching, keep-outs, kelvin connections). Layout requirements MUST be written down, never verbal.
-- **Reusable blocks.** Proven circuits (protection front-ends, regulator stages, identity EEPROM) SHOULD live in a shared, versioned library and be reused, not redrawn. A reused block MUST still be re-verified in its new context, and fixes SHOULD flow back to the shared library. A board carries its own copy of the assets it uses (Section 17.3).
+- **Reusable blocks.** Proven circuits (protection front-ends, regulator stages, Unit Port and Unit Link blocks) SHOULD live in a shared, versioned library and be reused, not redrawn. A reused block MUST still be re-verified in its new context, and fixes SHOULD flow back to the shared library. A board carries its own copy of the assets it uses (Section 17.3).
 
 ---
 
@@ -201,7 +201,7 @@ These rules apply to any board that provides a Unit Port — a Module, an adapte
 - **Battery systems.** Battery-powered designs MUST define charge termination, over/under-voltage and over-current protection, and temperature limits appropriate to the chemistry; protection MUST exist independently of software. Design the quiescent-current budget explicitly — sleep current is a design requirement, not an outcome.
 - **USB power.** USB-powered designs MUST respect inrush and current-draw limits of the USB specification they claim, tolerate the real voltage range at the connector after cable drop, and negotiate higher power before drawing it.
 - **Reverse polarity.** Any user-wireable or user-pluggable power input MUST have reverse-polarity protection (P-FET preferred over series diode for efficiency; diode acceptable at low current).
-- **Overcurrent.** Every board-level power input MUST have overcurrent protection (fuse, PTC or current-limited switch) rated so that a board fault cannot ignite the board or the upstream supply. Downstream domains that can be shorted by the user (expansion connectors, unit interfaces) SHOULD have their own current limiting.
+- **Overcurrent.** Every board-level power input MUST have overcurrent protection (fuse, PTC or current-limited switch) rated so that a board fault cannot ignite the board or the upstream supply. Downstream domains that can be shorted by the user (expansion connectors, measurement ports) SHOULD have their own current limiting; a Unit Port MUST (§6.1).
 - **Transients.** Power inputs MUST survive the transients of their environment: hot-plug inrush, inductive load dump, ESD. TVS on power entry SHOULD be default. Verify that input capacitance plus hot-plug does not violate connector or upstream limits.
 
 ### 6.1 Unit Port Power and States
@@ -542,4 +542,4 @@ New projects use this structure from creation. An existing repository migrates w
 
 ---
 
-*AURIORA Hardware Design Guide 0.11.0 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
+*AURIORA Hardware Design Guide 0.11.1 — complements the AURIORA Engineering Standard. Licensed under CC BY-SA 4.0.*
