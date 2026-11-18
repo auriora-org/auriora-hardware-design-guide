@@ -2,6 +2,10 @@
 
 All notable changes to the AURIORA Hardware Design Guide are documented in this file. Released versions are tagged in version control.
 
+## 0.12.0 - 2026-11-18
+
+- Removable recording medium (§14.1), following AES 0.15.0 `AES-MCI-011` ([EDR-020](https://github.com/auriora-org/auriora-engineering-standard/blob/main/docs/edr/EDR-020-retrieval-by-removable-medium.md)): the presence of the medium MUST be readable by firmware and able to interrupt, so that removal is a recorded event; the medium SHOULD have its own switched supply and handling protection; the slot is reachable without exposing the measurement circuit and the local indication shows when removal is safe. The existing §14.1 timekeeping rule already provides what `AES-MCI-010` needs from hardware — an RTC whose lost backup is visible to firmware — and is unchanged.
+
 ## 0.11.1 - 2026-10-20
 
 - §2 reusable-block list names Unit Port and Unit Link blocks instead of an identity EEPROM, following the AES chapter 06 retitle to *Unit Identity Record*.
